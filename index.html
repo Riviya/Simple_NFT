@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Mint Your Samurai NFT</title>
+    <script type="module">
+        import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js";
+
+        let userAddress;
+        const CONTRACT_ADDRESS = "0xa9e8449D5bcB982Fa3BBB76537C7031B76B56b44";
+        const ABI = [
+            {
+                "inputs": [{ "internalType": "string", "name": "tokenURI", "type": "string" }],
+                "name": "mintNft",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        // Connect MetaMask wallet
+        window.connectWallet = async function () {
+            try {
+                const connectButton = document.getElementById("connectButton");
+
+                // Check if MetaMask is available
+                if (typeof window.ethereum !== "undefined") {
+                    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                    userAddress = accounts[0];
+
+                    // Shorten the address (e.g., 0x1234...abcd)
+                    const shortAddress = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
+
+                    // Update button text
+                    connectButton.innerText = `Connected: ${shortAddress}`;
+                    connectButton.disabled = true; // Optional: Disable button after connection
+
+                } else {
+                    document.getElementById("walletAddress").innerText = "MetaMask Not Detected!";
+                }
+            } catch (error) {
+                console.error("Connection error:", error);
+                document.getElementById("walletAddress").innerText = "Connection Failed: " + error.message;
+            }
+        }
+
+        window.selectSamurai = function (id) {
+            document.querySelectorAll(".samurai-img").forEach(img => img.classList.remove("selected"));
+            document.getElementById("samurai" + id).classList.add("selected");
+            document.getElementById("samuraiId").value = id;
+        }
+
+
+
+
+
+        window.mintNFT = async function () {
+            if (!userAddress) {
+                document.getElementById("status").innerText = "Connect MetaMask first!";
+                return;
+            }
+
+            try {
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                const signer = await provider.getSigner();
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+                const samuraiId = document.getElementById("samuraiId").value;
+                const samuraiToIpfs = {
+                    1: "https://ipfs.io/ipfs/bafkreibylhqriz6ysso37jpignahqf2bamjpz5iwbhmgspqxv4e6bbbeoy",
+                    2: "https://ipfs.io/ipfs/bafkreifl675pchmo6bkhwr6lp4i6ey4mm3j7gbodmazsw4vbc4bk6odzpu",
+                    3: "https://ipfs.io/ipfs/bafkreigpnuxuy7wg6g2xc5y3ymmxvqshmaadhpswgskl454rogzpwaruii"
+                };
+
+                if (!samuraiToIpfs[samuraiId]) {
+                    document.getElementById("status").innerText = "Invalid SAMURAI ID! Choose 1, 2, or 3.";
+                    return;
+                }
+
+                const tokenUri = samuraiToIpfs[samuraiId];
+                document.getElementById("status").innerHTML = "<span class='Minting-message'> 🚀 Minting...</span>";
+
+                const tx = await contract.mintNft(tokenUri, { gasLimit: 500000 });
+                console.log("Transaction Hash:", tx.hash);
+                document.getElementById("status").innerText = "Txn: " + tx.hash;
+
+                await tx.wait();
+                document.getElementById("status").innerHTML = "<br><span class='success-message'> NFT Minted Successfully! 🎉</span>";
+
+            } catch (error) {
+                console.error("Error during minting:", error);
+                document.getElementById("status").innerText = "Error: " + error.message;
+            }
+        }
+    </script>
+
+    <style>
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(0, 255, 0, 1);
+            }
+
+            100% {
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            }
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-image: url('./img/samurai.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 18px;
+            background: linear-gradient(90deg, #ff0026, #121212);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: left;
+            margin-left: 160px;
+            /* Aligns text inside the button */
+
+        }
+
+        button:hover {
+            transform: scale(1.1);
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 2px solid black;
+            background: rgba(185, 172, 172, 0.756);
+            color: rgb(13, 12, 12);
+        }
+
+        h1 {
+            font-size: 3.5em;
+            animation: fadeIn 2s ease-in-out;
+            color: #010f07;
+            text-align: left;
+            /* Left align the header */
+            margin-left: 40px;
+            /* Add some margin from the left */
+        }
+
+        .success-message {
+            color: #fff;
+            background: linear-gradient(90deg, #010f07, #791856);
+            padding: 12px 18px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 12px;
+            display: inline-block;
+            margin-left: 50px;
+
+        }
+
+        p {
+            color: #101312;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: left;
+            /* Left align the paragraph */
+            margin-left: 103px;
+            /* Add some margin from the left */
+        }
+
+        .Minting-message {
+            color: black;
+            font-size: 22px;
+            font-weight: bold;
+
+            margin-left: 155px;
+
+        }
+
+        .samurai-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s, border 0.3s;
+        }
+
+        .selected {
+            outline: 5px solid gold;
+            /* Outline doesn't affect the layout */
+            outline-offset: 3px;
+            /* Space between image and outline */
+            transform: scale(1.1);
+
+        }
+
+        samurai-container {
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <br><br>
+    <h1>Mint Your Samurai NFT</h1>
+    <br><br>
+    <div style="text-align: left;margin-left: 65px;">
+        <button id="connectButton" onclick="connectWallet()">Connect MetaMask</button>
+    </div>
+
+    <br>
+
+    <p>Select a Samurai NFT to mint:</p>
+    <div style="text-align: left; margin-left: 110px;" class="samurai-container">
+        <img src="./img/samurai1.webp" id="samurai1" class="samurai-img" onclick="selectSamurai(1)">
+        <img src="./img/samurai2.webp" id="samurai2" class="samurai-img" onclick="selectSamurai(2)">
+        <img src="./img/samurai3.webp" id="samurai3" class="samurai-img" onclick="selectSamurai(3)">
+        <br>
+        <br>
+        <br>
+        <input type="hidden" id="samuraiId">
+        <button onclick="mintNFT()">Mint NFT</button>
+    </div>
+    <br>
+
+    <p id="status"></p>
+</body>
+
+</html>
