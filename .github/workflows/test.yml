@@ -20,6 +20,14 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache Foundry dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.foundry
+          key: ${{ runner.os }}-foundry-${{ hashFiles('**/*.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-foundry-
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
@@ -36,6 +44,12 @@ jobs:
         run: |
           forge build --sizes
         id: build
+
+      - name: Run Forge tests
+        run: |
+          forge test -vvv
+        id: test
+
 
       - name: Run Forge tests
         run: |
